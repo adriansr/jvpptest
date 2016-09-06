@@ -57,7 +57,7 @@ object Main {
         val promise = Promise[T]
         cs.whenComplete(new BiConsumer[T, Throwable] {
             def accept(result: T, err: Throwable): Unit = {
-                if (err ne null) {
+                if (err eq null) {
                     promise.success(result)
                 } else {
                     promise.failure(err)
@@ -69,7 +69,7 @@ object Main {
 
     def main(args: Array[String]): Unit = {
 
-        val registry = timeOp[JVppRegistry](ConnectionName,
+        val registry = timeOp[JVppRegistry]("registration",
                                             new JVppRegistryImpl(ConnectionName))
         require (registry.isSuccess)
 
