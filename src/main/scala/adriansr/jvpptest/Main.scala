@@ -3,15 +3,16 @@ package adriansr.jvpptest
 import java.util.concurrent.CompletionStage
 import java.util.function.BiConsumer
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-import org.openvpp.jvpp.{VppCallbackException, _}
 import org.openvpp.jvpp.callback.JVppCallback
 import org.openvpp.jvpp.core._
 import org.openvpp.jvpp.core.callback.{AfPacketCreateCallback, AfPacketDeleteCallback}
 import org.openvpp.jvpp.core.dto._
 import org.openvpp.jvpp.core.future.FutureJVppCoreFacade
+import org.openvpp.jvpp.{VppCallbackException, _}
 
 /**
   * Created by adrian on 06/09/16.
