@@ -20,8 +20,12 @@ task run(type: JavaExec, dependsOn: classes) {
 }
 jar {
     manifest {
-        attributes 'Implementation-Title': 'Midolman Java daemon',
-        'Implementation-Version': version
+        attributes (
+		    'Implementation-Title': 'Midolman Java daemon',
+            'Implementation-Version': '1.0',
+            'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+            'Main-Class': 'adriansr.jvpptest.Main'
+        )
     }
 }
 
