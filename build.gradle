@@ -27,5 +27,6 @@ jar {
             'Main-Class': 'adriansr.jvpptest.Main'
         )
     }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
