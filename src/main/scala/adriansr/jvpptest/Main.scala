@@ -1,20 +1,21 @@
 package adriansr.jvpptest
 
-import scala.util.Try
+import java.util.concurrent.CompletionStage
+import java.util.function.BiConsumer
 
-import org.openvpp.jvpp._
-import org.openvpp.jvpp.core._
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success, Try}
+
+import org.openvpp.jvpp.{VppCallbackException, _}
 import org.openvpp.jvpp.callback.JVppCallback
+import org.openvpp.jvpp.core._
 import org.openvpp.jvpp.core.callback.{AfPacketCreateCallback, AfPacketDeleteCallback}
-import org.openvpp.jvpp.VppCallbackException
 import org.openvpp.jvpp.core.dto._
 import org.openvpp.jvpp.core.future.FutureJVppCoreFacade
 
 /**
   * Created by adrian on 06/09/16.
   */
-
-
 object Main {
 
     val ConnectionName = "test"
@@ -50,7 +51,60 @@ object Main {
         retval
     }
 
+
+    def toScalaFuture[T](cs: CompletionStage[T])(implicit ec: ExecutionContext): Future[T] = {
+        val promise = Promise[T]
+        cs.whenComplete(new BiConsumer[T, Throwable] {
+            def accept(result: T, err: Throwable): Unit = {
+                if (err ne null) {
+                    promise.success(result)
+                } else {
+                    promise.failure(err)
+                }
+            }
+        })
+        promise.future
+    }
+
     def main(args: Array[String]): Unit = {
+
+        val registry = timeOp[JVppRegistry](ConnectionName,
+                                            new JVppRegistryImpl(ConnectionName))
+        require (registry.isSuccess)
+
+        val internalLib = new JVppCoreImpl
+        val lib = new FutureJVppCoreFacade(registry.get, internalLib)
+
+        //registry.get.register(lib, TestCallback)
+
+        // equivalent to:
+        // vpp# delete host-interface name $HostIfName
+        val delMsg = new AfPacketDelete
+        delMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
+        val delFuture = timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get
+
+
+        toScalaFuture(delFuture) onComplete {
+            case Success(id) => println(s"afPacketDelete completed $id")
+            case Failure(err) => println(s"afPacketDelete failed $err")
+        }
+
+        // equivalent to:
+        // vpp# create host-interface name $HostIfName
+        val createMsg = new AfPacketCreate
+        createMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
+        //msg.hwAddr = MacAddr.toCharArray.map( _.toByte )
+        createMsg.useRandomHwAddr = 1
+        val r = timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
+        require(r.isSuccess)
+
+        toScalaFuture(r.get) onComplete {
+            case Success(id) => println(s"AfPacketCreate completed $id")
+            case Failure(err) => println(s"AfPacketCreate failed $err")
+        }
+    }
+
+    def main_with_basic_jvpp(args: Array[String]): Unit = {
 
         val registry = timeOp[JVppRegistry]("registration",
                                           new JVppRegistryImpl(ConnectionName))
