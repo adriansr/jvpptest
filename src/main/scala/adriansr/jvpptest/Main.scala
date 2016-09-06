@@ -2,9 +2,9 @@ package adriansr.jvpptest
 
 import scala.util.Try
 
-import org.openvpp.jvpp._
-import org.openvpp.jvpp.callback.JVppCallback
-import org.openvpp.jvpp.dto.AfPacketCreate
+import org.openvpp.jvpp.core._
+//import org.openvpp.jvpp.callback.JVppCallback
+import org.openvpp.jvpp.core.dto.AfPacketCreate
 
 /**
   * Created by adrian on 06/09/16.
@@ -35,8 +35,12 @@ object Main {
         retval
     }
     def main(args: Array[String]): Unit = {
-        val lib: JVpp = new JVppImpl(new VppJNIConnection(ConnectionName))
-        require(timeOp("connect", lib.connect(connectCallback)).isSuccess)
+        //val result = timeOp[JVppRegistry]("registration",
+        //                                  new JVppRegistryImpl(ConnectionName))
+        //require (result.isSuccess)
+        //val lib = result.get
+
+        val lib = new JVppCoreImpl
 
         val msg = new AfPacketCreate
         msg.hostIfName = HostIfName.toCharArray.map( _.toByte )
