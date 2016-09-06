@@ -112,14 +112,33 @@ object Main {
         setUpMsg.linkUpDown = 1
         setUpMsg.swIfIndex = -1 // filled later
 
-        val delFuture = toScalaFuture(timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
-        delFuture.collect { case _ =>
-            toScalaFuture(timeOp("send afPacketCreate", lib.afPacketCreate(createMsg)).get)
-                    .flatMap { reply =>
-                        setUpMsg.swIfIndex = reply.swIfIndex
-                        toScalaFuture(timeOp("send set int state", lib.swInterfaceSetFlags(setUpMsg)).get)
-                    }
-        }
+        for {
+            _ <- toScalaFuture(
+                timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
+                .collect({ case _ => false })
+            creation <- toScalaFuture(
+                timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
+                    .get)
+            setup <- toScalaFuture(
+                timeOp("send set int state", lib.swInterfaceSetFlags(setUpMsg))
+                    .get)
+        } yield true
+
+        //val delFuture = toScalaFuture[Unit](timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
+        //delFuture.recover {
+        //    case _ =>
+        //} flatMap {
+            //toScalaFuture(timeOp("send afPacketCreate", lib.afPacketCreate(createMsg)).get)
+        //}
+        //delFuture.collect { case _ =>
+        //    toScalaFuture(timeOp("send afPacketCreate", lib.afPacketCreate(createMsg)).get)
+        //} flatMap { reply =>
+        //    setUpMsg.swIfIndex = reply.
+        //    toScalaFuture(timeOp("send set int state", lib.swInterfaceSetFlags(setUpMsg)).get)
+        //} onComplete {
+        //    case Success(_) => println("Completed!")
+        //    case Failure(err) => println(s"Failed: $err")
+        //}
     }
 
     def main_with_basic_jvpp(args: Array[String]): Unit = {
