@@ -115,7 +115,7 @@ object Main {
         for {
             _ <- toScalaFuture(
                 timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
-                .collect({ case _ => false })
+                .recover { case _ => new AfPacketCreateReply }
             creation <- toScalaFuture(
                 timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
                     .get)
