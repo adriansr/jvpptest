@@ -82,13 +82,12 @@ object Main {
         // vpp# delete host-interface name $HostIfName
         val delMsg = new AfPacketDelete
         delMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
-        val delFuture = timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get
+        //val delFuture = toScalaFuture(timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
 
-
-        toScalaFuture(delFuture) onComplete {
-            case Success(id) => println(s"afPacketDelete completed $id")
-            case Failure(err) => println(s"afPacketDelete failed $err")
-        }
+        //delFuture onComplete {
+        //    case Success(id) => println(s"afPacketDelete completed $id")
+        //    case Failure(err) => println(s"afPacketDelete failed $err")
+        //}
 
         // equivalent to:
         // vpp# create host-interface name $HostIfName
@@ -96,12 +95,30 @@ object Main {
         createMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
         //msg.hwAddr = MacAddr.toCharArray.map( _.toByte )
         createMsg.useRandomHwAddr = 1
-        val r = timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
-        require(r.isSuccess)
 
-        toScalaFuture(r.get) onComplete {
-            case Success(id) => println(s"AfPacketCreate completed $id")
-            case Failure(err) => println(s"AfPacketCreate failed $err")
+        //val r = timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
+        //require(r.isSuccess)
+
+        //toScalaFuture(r.get) onComplete {
+        //    case Success(id) => println(s"AfPacketCreate completed $id")
+        //    case Failure(err) => println(s"AfPacketCreate failed $err")
+        //}
+
+        // equivalent to:
+        // vpp# set int state host-$HostIfName up
+        val setUpMsg = new SwInterfaceSetFlags
+        setUpMsg.adminUpDown = 1
+        setUpMsg.deleted = 0
+        setUpMsg.linkUpDown = 1
+        setUpMsg.swIfIndex = -1 // filled later
+
+        val delFuture = toScalaFuture(timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
+        delFuture.collect { case _ =>
+            toScalaFuture(timeOp("send afPacketCreate", lib.afPacketCreate(createMsg)).get)
+                    .flatMap { reply =>
+                        setUpMsg.swIfIndex = reply.swIfIndex
+                        toScalaFuture(timeOp("send set int state", lib.swInterfaceSetFlags(setUpMsg)).get)
+                    }
         }
     }
 
