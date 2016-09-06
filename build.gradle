@@ -18,3 +18,10 @@ task run(type: JavaExec, dependsOn: classes) {
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Midolman Java daemon',
+        'Implementation-Version': version
+    }
+}
+
