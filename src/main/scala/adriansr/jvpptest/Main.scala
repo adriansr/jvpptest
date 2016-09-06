@@ -2,9 +2,13 @@ package adriansr.jvpptest
 
 import scala.util.Try
 
+import org.openvpp.jvpp._
 import org.openvpp.jvpp.core._
-//import org.openvpp.jvpp.callback.JVppCallback
-import org.openvpp.jvpp.core.dto.AfPacketCreate
+import org.openvpp.jvpp.callback.JVppCallback
+import org.openvpp.jvpp.core.callback.{AfPacketCreateCallback, AfPacketDeleteCallback}
+import org.openvpp.jvpp.VppCallbackException
+import org.openvpp.jvpp.core.dto._
+import org.openvpp.jvpp.core.future.FutureJVppCoreFacade
 
 /**
   * Created by adrian on 06/09/16.
@@ -14,12 +18,23 @@ import org.openvpp.jvpp.core.dto.AfPacketCreate
 object Main {
 
     val ConnectionName = "test"
-    val HostIfName = "dev"
-    val MacAddr = "62:44:4e:de:89:c1"
+    val HostIfName = "enp0s3"
+    //val MacAddr = "62:44:4e:de:89:c1"
 
-    val connectCallback = new JVppCallback {
+    object TestCallback extends JVppCallback
+                           with AfPacketCreateCallback
+                           with AfPacketDeleteCallback {
+
         override def onError(e: VppCallbackException): Unit = {
-            println("Connect callback onError: $e")
+            println(s"VPP error[${e.getCtxId}]: $e")
+        }
+
+        override def onAfPacketCreateReply(afPacketCreateReply: AfPacketCreateReply): Unit = {
+            println(s"AfPacketCreate completed ${afPacketCreateReply.context}")
+        }
+
+        override def onAfPacketDeleteReply(afPacketDeleteReply: AfPacketDeleteReply): Unit = {
+            println(s"AfPacketDelete completed ${afPacketDeleteReply.context}")
         }
     }
 
@@ -34,19 +49,29 @@ object Main {
         }
         retval
     }
+
     def main(args: Array[String]): Unit = {
-        //val result = timeOp[JVppRegistry]("registration",
-        //                                  new JVppRegistryImpl(ConnectionName))
-        //require (result.isSuccess)
-        //val lib = result.get
+
+        val registry = timeOp[JVppRegistry]("registration",
+                                          new JVppRegistryImpl(ConnectionName))
+        require (registry.isSuccess)
 
         val lib = new JVppCoreImpl
+        registry.get.register(lib, TestCallback)
 
-        val msg = new AfPacketCreate
-        msg.hostIfName = HostIfName.toCharArray.map( _.toByte )
-        msg.hwAddr = MacAddr.toCharArray.map( _.toByte )
-        msg.useRandomHwAddr = 0
-        val r = timeOp("afPacketCreate", lib.afPacketCreate(msg))
+        // equivalent to:
+        // vpp# delete host-interface name $HostIfName
+        val delMsg = new AfPacketDelete
+        delMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
+        timeOp("send afPacketDelete", lib.afPacketDelete(delMsg))
+
+        // equivalent to:
+        // vpp# create host-interface name $HostIfName
+        val createMsg = new AfPacketCreate
+        createMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
+        //msg.hwAddr = MacAddr.toCharArray.map( _.toByte )
+        createMsg.useRandomHwAddr = 1
+        val r = timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
         require(r.isSuccess)
     }
 }
