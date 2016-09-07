@@ -95,7 +95,8 @@ object Main {
         def deleteDevice(name: String): Future[AfPacketDeleteReply] = {
             val request = new AfPacketDelete
             request.hostIfName = name.toCharArray.map( _.toByte )
-            vppRequestToFuture { lib.afPacketDelete(request) }
+            vppRequestToFuture("delete interface",
+                               lib.afPacketDelete(request))
         }
 
         val delMsg = new AfPacketDelete
@@ -114,7 +115,8 @@ object Main {
                 case None =>
                     request.useRandomHwAddr = 1
             }
-            vppRequestToFuture { lib.afPacketCreate(request) }
+            vppRequestToFuture("create interface",
+                               lib.afPacketCreate(request))
         }
 
         // equivalent to:
@@ -125,7 +127,8 @@ object Main {
             setUpMsg.deleted = 0
             setUpMsg.linkUpDown = 1
             setUpMsg.swIfIndex = ifIndex
-            vppRequestToFuture { lib.swInterfaceSetFlags(setUpMsg) }
+            vppRequestToFuture("set up interface",
+                               lib.swInterfaceSetFlags(setUpMsg))
         }
 
         for {
