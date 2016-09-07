@@ -5,6 +5,7 @@ import java.util.function.BiConsumer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 import org.openvpp.jvpp.callback.JVppCallback
@@ -76,69 +77,58 @@ object Main {
         val internalLib = new JVppCoreImpl
         val lib = new FutureJVppCoreFacade(registry.get, internalLib)
 
-        //registry.get.register(lib, TestCallback)
+        def vppRequestToFuture[T](request: => CompletionStage[T]): Future[T] = {
+            try {
+                toScalaFuture(request)
+            } catch {
+                case NonFatal(err) =>
+                    Future.failed(err)
+            }
+        }
 
         // equivalent to:
-        // vpp# delete host-interface name $HostIfName
+        // vpp# delete host-interface name <name>
+        def deleteDevice(name: String): Future[AfPacketDeleteReply] = {
+            val request = new AfPacketDelete
+            request.hostIfName = name.toCharArray.map( _.toByte )
+            vppRequestToFuture { lib.afPacketDelete(request) }
+        }
+
         val delMsg = new AfPacketDelete
         delMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
-        //val delFuture = toScalaFuture(timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
-
-        //delFuture onComplete {
-        //    case Success(id) => println(s"afPacketDelete completed $id")
-        //    case Failure(err) => println(s"afPacketDelete failed $err")
-        //}
 
         // equivalent to:
-        // vpp# create host-interface name $HostIfName
-        val createMsg = new AfPacketCreate
-        createMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
-        //msg.hwAddr = MacAddr.toCharArray.map( _.toByte )
-        createMsg.useRandomHwAddr = 1
+        // vpp# create host-interface name <name>
+        def createDevice(name: String, mac: Option[String]): Future[AfPacketCreateReply] = {
 
-        //val r = timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
-        //require(r.isSuccess)
-
-        //toScalaFuture(r.get) onComplete {
-        //    case Success(id) => println(s"AfPacketCreate completed $id")
-        //    case Failure(err) => println(s"AfPacketCreate failed $err")
-        //}
+            val request = new AfPacketCreate
+            request.hostIfName = name.toCharArray.map( _.toByte )
+            mac match {
+                case Some(addr) =>
+                    request.hwAddr = addr.toCharArray.map( _.toByte )
+                    request.useRandomHwAddr = 0
+                case None =>
+                    request.useRandomHwAddr = 1
+            }
+            vppRequestToFuture { lib.afPacketCreate(request) }
+        }
 
         // equivalent to:
-        // vpp# set int state host-$HostIfName up
-        val setUpMsg = new SwInterfaceSetFlags
-        setUpMsg.adminUpDown = 1
-        setUpMsg.deleted = 0
-        setUpMsg.linkUpDown = 1
-        setUpMsg.swIfIndex = -1 // filled later
+        // vpp# set int state <interface> up
+        def setDeviceUp(ifIndex: Int): Future[SwInterfaceSetFlagsReply] = {
+            val setUpMsg = new SwInterfaceSetFlags
+            setUpMsg.adminUpDown = 1
+            setUpMsg.deleted = 0
+            setUpMsg.linkUpDown = 1
+            setUpMsg.swIfIndex = ifIndex
+            vppRequestToFuture { lib.swInterfaceSetFlags(setUpMsg) }
+        }
 
         for {
-            _ <- toScalaFuture(
-                timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
-                .recover { case _ => new AfPacketCreateReply }
-            creation <- toScalaFuture(
-                timeOp("send afPacketCreate", lib.afPacketCreate(createMsg))
-                    .get)
-            setup <- toScalaFuture(
-                timeOp("send set int state", lib.swInterfaceSetFlags(setUpMsg))
-                    .get)
+            _ <- deleteDevice(HostIfName) recover { case _ => new AfPacketCreateReply }
+            creation <- createDevice(HostIfName, None)
+            setup <- setDeviceUp(creation.swIfIndex)
         } yield true
-
-        //val delFuture = toScalaFuture[Unit](timeOp("send afPacketDelete", lib.afPacketDelete(delMsg)).get)
-        //delFuture.recover {
-        //    case _ =>
-        //} flatMap {
-            //toScalaFuture(timeOp("send afPacketCreate", lib.afPacketCreate(createMsg)).get)
-        //}
-        //delFuture.collect { case _ =>
-        //    toScalaFuture(timeOp("send afPacketCreate", lib.afPacketCreate(createMsg)).get)
-        //} flatMap { reply =>
-        //    setUpMsg.swIfIndex = reply.
-        //    toScalaFuture(timeOp("send set int state", lib.swInterfaceSetFlags(setUpMsg)).get)
-        //} onComplete {
-        //    case Success(_) => println("Completed!")
-        //    case Failure(err) => println(s"Failed: $err")
-        //}
     }
 
     def main_with_basic_jvpp(args: Array[String]): Unit = {
