@@ -72,7 +72,7 @@ object Main {
 
         val registry = timeOp[JVppRegistry]("registration",
                                             new JVppRegistryImpl(ConnectionName))
-        require (registry.isSuccess)
+        require(registry.isSuccess)
 
         val internalLib = new JVppCoreImpl
         val lib = new FutureJVppCoreFacade(registry.get, internalLib)
@@ -94,23 +94,24 @@ object Main {
         // vpp# delete host-interface name <name>
         def deleteDevice(name: String): Future[AfPacketDeleteReply] = {
             val request = new AfPacketDelete
-            request.hostIfName = name.toCharArray.map( _.toByte )
+            request.hostIfName = name.toCharArray.map(_.toByte)
             vppRequestToFuture("delete interface",
                                lib.afPacketDelete(request))
         }
 
         val delMsg = new AfPacketDelete
-        delMsg.hostIfName = HostIfName.toCharArray.map( _.toByte )
+        delMsg.hostIfName = HostIfName.toCharArray.map(_.toByte)
 
         // equivalent to:
         // vpp# create host-interface name <name>
-        def createDevice(name: String, mac: Option[String]): Future[AfPacketCreateReply] = {
+        def createDevice(name: String,
+                         mac: Option[String]): Future[AfPacketCreateReply] = {
 
             val request = new AfPacketCreate
-            request.hostIfName = name.toCharArray.map( _.toByte )
+            request.hostIfName = name.toCharArray.map(_.toByte)
             mac match {
                 case Some(addr) =>
-                    request.hwAddr = addr.toCharArray.map( _.toByte )
+                    request.hwAddr = addr.toCharArray.map(_.toByte)
                     request.useRandomHwAddr = 0
                 case None =>
                     request.useRandomHwAddr = 1
@@ -131,17 +132,25 @@ object Main {
                                lib.swInterfaceSetFlags(setUpMsg))
         }
 
-        for {
+        /*for {
             _ <- deleteDevice(HostIfName) recover { case _ => new AfPacketCreateReply }
             creation <- createDevice(HostIfName, None)
             setup <- setDeviceUp(creation.swIfIndex)
-        } yield true
+        } yield true*/
+
+        deleteDevice(HostIfName).recover {
+            case _ => new AfPacketDeleteReply
+        } flatMap { _ =>
+            createDevice(HostIfName, None)
+        } flatMap { result =>
+            setDeviceUp(result.swIfIndex)
+        }
     }
 
     def main_with_basic_jvpp(args: Array[String]): Unit = {
 
         val registry = timeOp[JVppRegistry]("registration",
-                                          new JVppRegistryImpl(ConnectionName))
+                                            new JVppRegistryImpl(ConnectionName))
         require (registry.isSuccess)
 
         val lib = new JVppCoreImpl
