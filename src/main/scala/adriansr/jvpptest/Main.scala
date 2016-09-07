@@ -77,9 +77,13 @@ object Main {
         val internalLib = new JVppCoreImpl
         val lib = new FutureJVppCoreFacade(registry.get, internalLib)
 
-        def vppRequestToFuture[T](request: => CompletionStage[T]): Future[T] = {
+        def vppRequestToFuture[T](name: String,
+                                  request: => CompletionStage[T]): Future[T] = {
             try {
-                toScalaFuture(request)
+                toScalaFuture[T](request) andThen {
+                    case Success(result) => println(s"operation $name completed")
+                    case Failure(err) => println(s"operation $name failed: $err")
+                }
             } catch {
                 case NonFatal(err) =>
                     Future.failed(err)
