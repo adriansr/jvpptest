@@ -87,6 +87,7 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.isAdd = if (isAdd) 1 else 0
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
         routeMsg.createVrfIfNeeded = 1
+        routeMsg.nextHopWeight = 1
         nextHop.encode(routeMsg)
         vppRequestToFuture(lib.ipAddDelRoute(routeMsg))
     }

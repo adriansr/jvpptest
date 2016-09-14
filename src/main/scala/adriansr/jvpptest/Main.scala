@@ -164,9 +164,21 @@ object Main {
                                  VppApi.NetworkTarget(fooId),
                                  isAdd = true,
                                  isIpv6 = false))
+            .add("> ip route add (net foodp)",
+                 api.addDelRoute(Array[Byte](1, 1, 1, 2),
+                                 32,
+                                 VppApi.NetworkTarget(fooId),
+                                 isAdd = true,
+                                 isIpv6 = false))
             .add("> ip route add (net outdp)",
                  api.addDelRoute(Array[Byte](2, 2, 2, 0),
                                  24,
+                                 VppApi.NetworkTarget(outId),
+                                 isAdd = true,
+                                 isIpv6 = false))
+            .add("> ip route add (net outdp)",
+                 api.addDelRoute(Array[Byte](2, 2, 2, 1),
+                                 32,
                                  VppApi.NetworkTarget(outId),
                                  isAdd = true,
                                  isIpv6 = false))
