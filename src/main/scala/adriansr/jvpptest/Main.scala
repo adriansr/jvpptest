@@ -87,7 +87,7 @@ object Main {
                         24,
                         Array[Byte](2, 2, 2, 2),
                         isAdd=true,
-                        isIpv6 = true) onComplete {
+                        isIpv6 = false) onComplete {
             case Success(reply) =>
                 println("add route completed")
                 System.exit(0)
