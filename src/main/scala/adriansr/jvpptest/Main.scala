@@ -158,24 +158,24 @@ object Main {
                    createDevice("foodp", "5e:ab:a6:08:dd:d4").map(fooId = _))
             .add("> create host-interface outdp",
                    createDevice("outdp", "82:b6:10:d0:09:71").map(outId = _))
-            /*.add("> ip route add (net foodp)",
+            .add("> ip route add (net foodp)",
                  api.addDelRoute(Array[Byte](1, 1, 1, 0),
                                  24,
                                  VppApi.NetworkTarget(fooId),
                                  isAdd = true,
-                                 isIpv6 = false))*/
+                                 isIpv6 = false))
             .add("> ip route add (net foodp)",
                  api.addDelRoute(Array[Byte](1, 1, 1, 2),
                                  32,
                                  VppApi.NetworkTarget(fooId),
                                  isAdd = true,
                                  isIpv6 = false))
-            /*.add("> ip route add (net outdp)",
+            .add("> ip route add (net outdp)",
                  api.addDelRoute(Array[Byte](2, 2, 2, 0),
                                  24,
                                  VppApi.NetworkTarget(outId),
                                  isAdd = true,
-                                 isIpv6 = false))*/
+                                 isIpv6 = false))
             .add("> ip route add (net outdp)",
                  api.addDelRoute(Array[Byte](2, 2, 2, 1),
                                  32,
