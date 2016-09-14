@@ -59,6 +59,21 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         vppRequestToFuture(lib.swInterfaceSetFlags(setUpMsg))
     }
 
+    def addDelDeviceAddress(ifIndex: Int,
+                            address: Array[Byte],
+                            isIpv6: Boolean,
+                            isAdd: Boolean,
+                            deleteAll: Boolean = false)
+                        : Future[SwInterfaceAddDelAddressReply] = {
+        val msg = new SwInterfaceAddDelAddress
+        msg.address = address
+        msg.addressLength = if (isIpv6) 16 else 4
+        msg.delAll = if (deleteAll) 1 else 0
+        msg.isIpv6 = if (isIpv6) 1 else 0
+        msg.swIfIndex = ifIndex
+        vppRequestToFuture(lib.swInterfaceAddDelAddress(msg))
+    }
+
     //equivalent to:
     // ip route add/del address/prefix via nextHop
     def addDelRoute(address: Array[Byte],
@@ -73,20 +88,6 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
         routeMsg.nextHopAddress = nextHop
         //routeMsg.resolveIfNeeded = 1
-        vppRequestToFuture(lib.ipAddDelRoute(routeMsg))
-    }
-
-    //equivalent to:
-    // ip route add address/prefix via nextHop
-    def addRoute6(address: Array[Byte],
-                  prefix: Byte,
-                  nextHop: Array[Byte]): Future[IpAddDelRouteReply] = {
-        val routeMsg = new IpAddDelRoute
-        routeMsg.dstAddress = address
-        routeMsg.dstAddressLength = prefix
-        routeMsg.isAdd = 1
-        routeMsg.isIpv6 = 1
-        routeMsg.nextHopAddress = nextHop
         vppRequestToFuture(lib.ipAddDelRoute(routeMsg))
     }
 }
