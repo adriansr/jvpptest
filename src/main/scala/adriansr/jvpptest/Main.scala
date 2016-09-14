@@ -146,7 +146,7 @@ object Main {
             }
         }
 
-        val runner = new FutureExecutor(2000)
+        val runner = new FutureExecutor(500)
 
         var fooId = -1
         var outId = -1
