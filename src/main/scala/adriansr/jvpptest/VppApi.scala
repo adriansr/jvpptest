@@ -49,8 +49,8 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
 
     // equivalent to:
     // vpp# set int state <interface> up
-    def setDeviceAdminState(state: Boolean,
-                            ifIndex: Int): Future[SwInterfaceSetFlagsReply] = {
+    def setDeviceAdminState(ifIndex: Int,
+                            state: Boolean): Future[SwInterfaceSetFlagsReply] = {
         val setUpMsg = new SwInterfaceSetFlags
         setUpMsg.adminUpDown = if (state) 1 else 0
         setUpMsg.deleted = 0
