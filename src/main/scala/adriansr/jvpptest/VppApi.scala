@@ -71,7 +71,6 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         msg.delAll = if (deleteAll) 1 else 0
         msg.isIpv6 = if (isIpv6) 1 else 0
         msg.swIfIndex = ifIndex
-        println(s"addDelDeviceAddress: interface $ifIndex")
         vppRequestToFuture(lib.swInterfaceAddDelAddress(msg))
     }
 

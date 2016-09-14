@@ -184,7 +184,7 @@ object Main {
             .add("> ip route add",
                 api.addDelRoute(Array[Byte](3, 3, 3, 3),
                                 24,
-                                VppApi.AddressTarget(Array[Byte](2, 2, 2, 1)),
+                                VppApi.AddressTarget(Array[Byte](2, 2, 2, 2)),
                                 isAdd = true,
                                 isIpv6 = false))
             .run()
