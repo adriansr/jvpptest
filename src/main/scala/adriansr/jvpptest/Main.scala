@@ -90,8 +90,10 @@ object Main {
                         isIpv6 = true) onComplete {
             case Success(reply) =>
                 println("add route completed")
+                System.exit(0)
             case Failure(err) =>
                 println(s"Add route failed: $err")
+                System.exit(1)
         }
     }
 
