@@ -4,7 +4,8 @@ import java.util.concurrent.CompletionStage
 import java.util.function.BiConsumer
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -81,23 +82,61 @@ object Main {
         }
     }
 
-    def main(args: Array[String]): Unit = {
+    def main(args: Array[String]): Unit = mi_1415()
+
+    def mi_1415(): Unit = {
         val api = new VppApi("test")
-        api.addDelRoute(Array[Byte](3, 3, 3, 3),
-                        24,
-                        Array[Byte](2, 2, 2, 2),
-                        isAdd=true,
-                        isIpv6 = false) onComplete {
-            case Success(reply) =>
-                println("add route completed")
-                System.exit(0)
-            case Failure(err) =>
-                println(s"Add route failed: $err")
-                System.exit(1)
+
+        // returns the created interface index
+        def createDevice(name: String, mac: String): Future[Int] = {
+            api.createDevice(name, Some(mac)) flatMap {
+                result => api.setDeviceAdminState(result.swIfIndex,
+                                                  isUp = true) map
+                                                        (_ => result.swIfIndex)
+            }
         }
+
+        def op[T](name: String,
+                  future: Future[T]): T = {
+            try {
+                println(s"Begin $name")
+                val result = Await.result(future, 60 seconds)
+                println(s"End $name")
+                result
+            } catch {
+                case NonFatal(err) =>
+                    println(s"Failed $name: $err")
+                    throw err
+            }
+        }
+
+        val fooId = op("> create host-interface foodp",
+                       createDevice("foodp", "5e:ab:a6:08:dd:d4"))
+
+        val outId = op("> create host-interface outdp",
+                       createDevice("outdp", "82:b6:10:d0:09:71"))
+
+        op("> set int ip address foodp",
+           api.addDelDeviceAddress(fooId,
+                                   Array[Byte](1, 1, 1, 2),
+                                   isIpv6 = false,
+                                   isAdd = true))
+
+        op("> set int ip address outdp",
+           api.addDelDeviceAddress(outId,
+                                   Array[Byte](2, 2, 2, 1),
+                                   isIpv6 = false,
+                                   isAdd = true))
+
+        op("> ip route add",
+            api.addDelRoute(Array[Byte](3, 3, 3, 3),
+                            24,
+                            Array[Byte](2, 2, 2, 2),
+                            isAdd=true,
+                            isIpv6 = false))
     }
 
-    def sample_main(args: Array[String]): Unit = {
+    def main_with_futures(args: Array[String]): Unit = {
 
         val registry = timeOp[JVppRegistry]("registration",
                                             new JVppRegistryImpl(ConnectionName))
