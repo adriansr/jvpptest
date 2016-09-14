@@ -156,6 +156,12 @@ object Main {
                    createDevice("foodp", "5e:ab:a6:08:dd:d4").map(fooId = _))
             .add("> create host-interface outdp",
                    createDevice("outdp", "82:b6:10:d0:09:71").map(outId = _))
+            .add("> ip route add (net)",
+                 api.addDelRoute(Array[Byte](1, 1, 1, 0),
+                                 24,
+                                 Array[Byte](2, 2, 2, 2),
+                                 isAdd = true,
+                                 isIpv6 = false))
             .add("> set int ip address foodp",
                    api.addDelDeviceAddress(fooId,
                                            Array[Byte](1, 1, 1, 2),
@@ -167,12 +173,11 @@ object Main {
                                            Array[Byte](2, 2, 2, 1),
                                            isIpv6 = false,
                                            isAdd = true))
-
             .add("> ip route add",
                 api.addDelRoute(Array[Byte](3, 3, 3, 3),
                                 24,
-                                Array[Byte](2, 2, 2, 2),
-                                isAdd=true,
+                                Array[Byte](2, 2, 2, 1),
+                                isAdd = true,
                                 isIpv6 = false))
             .run()
     }
