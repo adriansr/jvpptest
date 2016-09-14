@@ -89,7 +89,8 @@ object Main {
 
         // returns the created interface index
         def createDevice(name: String, mac: String): Future[Int] = {
-            api.createDevice(name, Some(mac)) flatMap {
+            val macArray = mac.split(":").map(Integer.parseInt(_, 16).toByte)
+            api.createDevice(name, Some(macArray)) flatMap {
                 result => api.setDeviceAdminState(result.swIfIndex,
                                                   isUp = true) map
                                                         (_ => result.swIfIndex)

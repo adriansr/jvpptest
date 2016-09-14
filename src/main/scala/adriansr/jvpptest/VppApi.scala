@@ -33,13 +33,13 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
     // equivalent to:
     // vpp# create host-interface name <name>
     def createDevice(name: String,
-                     mac: Option[String]): Future[AfPacketCreateReply] = {
+                     mac: Option[Array[Byte]]): Future[AfPacketCreateReply] = {
 
         val request = new AfPacketCreate
         request.hostIfName = name.toCharArray.map(_.toByte)
         mac match {
             case Some(addr) =>
-                request.hwAddr = addr.toCharArray.map(_.toByte)
+                request.hwAddr = addr
                 request.useRandomHwAddr = 0
             case None =>
                 request.useRandomHwAddr = 1
