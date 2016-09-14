@@ -36,7 +36,7 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
                      mac: Option[Array[Byte]]): Future[AfPacketCreateReply] = {
 
         val request = new AfPacketCreate
-        request.hostIfName = name.toCharArray.map(_.toByte)
+        request.hostIfName = name.toCharArray.map(_.toByte) ++ Array[Byte](0)
         mac match {
             case Some(addr) =>
                 request.hwAddr = addr
