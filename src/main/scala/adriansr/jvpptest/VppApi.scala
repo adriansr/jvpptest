@@ -14,7 +14,7 @@ import org.openvpp.jvpp.core.future.FutureJVppCoreFacade
 /**
   * Created by adrian on 14/09/16.
   */
-class VppApi(connectionName: String) {
+class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
 
     import VppApi._
 
@@ -106,7 +106,8 @@ object VppApi {
         promise.future
     }
 
-    private def vppRequestToFuture[T](request: => CompletionStage[T]): Future[T] = {
+    private def vppRequestToFuture[T](request: => CompletionStage[T])
+                                     (implicit ec: ExecutionContext): Future[T] = {
         try {
             toScalaFuture[T](request)
         } catch {

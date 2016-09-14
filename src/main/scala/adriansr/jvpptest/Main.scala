@@ -87,7 +87,12 @@ object Main {
                         24,
                         Array[Byte](2, 2, 2, 2),
                         isAdd=true,
-                        isIpv6 = true)
+                        isIpv6 = true) onComplete {
+            case Success(reply) =>
+                println("add route completed")
+            case Failure(err) =>
+                println(s"Add route failed: $err")
+        }
     }
 
     def sample_main(args: Array[String]): Unit = {
