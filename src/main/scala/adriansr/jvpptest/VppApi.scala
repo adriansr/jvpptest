@@ -79,7 +79,7 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
     // ip route add/del address/prefix via nextHop
     def addDelRoute(address: Array[Byte],
                     prefix: Byte,
-                    nextHop: Array[Byte],
+                    nextHop: RouteTarget,
                     isAdd: Boolean,
                     isIpv6: Boolean): Future[IpAddDelRouteReply] = {
         val routeMsg = new IpAddDelRoute
@@ -87,13 +87,29 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.dstAddressLength = prefix
         routeMsg.isAdd = if (isAdd) 1 else 0
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
-        routeMsg.nextHopAddress = nextHop
-        //routeMsg.resolveIfNeeded = 1
+        nextHop.encode(routeMsg)
         vppRequestToFuture(lib.ipAddDelRoute(routeMsg))
     }
+
 }
 
 object VppApi {
+    trait RouteTarget {
+        def encode(msg: IpAddDelRoute): Unit
+    }
+
+    case class AddressTarget(address: Array[Byte]) extends RouteTarget {
+        def encode(msg: IpAddDelRoute): Unit = {
+            msg.nextHopAddress = address
+        }
+    }
+
+    case class NetworkTarget(ifaceIdx: Int) extends RouteTarget {
+        def encode(msg: IpAddDelRoute): Unit = {
+            msg.nextHopSwIfIndex = ifaceIdx
+        }
+    }
+
     private def toScalaFuture[T](cs: CompletionStage[T])
                                 (implicit ec: ExecutionContext): Future[T] = {
         val promise = Promise[T]
