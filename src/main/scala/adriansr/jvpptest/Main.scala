@@ -68,7 +68,29 @@ object Main {
         promise.future
     }
 
+    def vppRequestToFuture[T](name: String,
+                              request: => CompletionStage[T]): Future[T] = {
+        try {
+            toScalaFuture[T](request) andThen {
+                case Success(result) => println(s"operation $name completed")
+                case Failure(err) => println(s"operation $name failed: $err")
+            }
+        } catch {
+            case NonFatal(err) =>
+                Future.failed(err)
+        }
+    }
+
     def main(args: Array[String]): Unit = {
+        val api = new VppApi("test")
+        api.addDelRoute(Array[Byte](3, 3, 3, 3),
+                        24,
+                        Array[Byte](2, 2, 2, 2),
+                        isAdd=true,
+                        isIpv6 = true)
+    }
+
+    def sample_main(args: Array[String]): Unit = {
 
         val registry = timeOp[JVppRegistry]("registration",
                                             new JVppRegistryImpl(ConnectionName))
@@ -77,18 +99,6 @@ object Main {
         val internalLib = new JVppCoreImpl
         val lib = new FutureJVppCoreFacade(registry.get, internalLib)
 
-        def vppRequestToFuture[T](name: String,
-                                  request: => CompletionStage[T]): Future[T] = {
-            try {
-                toScalaFuture[T](request) andThen {
-                    case Success(result) => println(s"operation $name completed")
-                    case Failure(err) => println(s"operation $name failed: $err")
-                }
-            } catch {
-                case NonFatal(err) =>
-                    Future.failed(err)
-            }
-        }
 
         // equivalent to:
         // vpp# delete host-interface name <name>
