@@ -84,6 +84,55 @@ object Main {
 
     def main(args: Array[String]): Unit = mi_1415()
 
+    class FutureExecutor(delayBetweenTasks: Int,
+                         tasks: FutureExecutor.ListType = List()) {
+
+        def add(name: String, op: => Future[Any]): FutureExecutor =
+            new FutureExecutor(delayBetweenTasks, (name, () => op) :: tasks)
+
+        def run(): Unit = {
+            val rlist = tasks.reverse
+            FutureExecutor.run_one(delayBetweenTasks,
+                                   rlist.head,
+                                   rlist.tail) onComplete {
+                case Success(_) =>
+                    println("Execution succeeded")
+                    System.exit(0)
+                case Failure(err) =>
+                    println(s"Execution failed: $err")
+                    System.exit(1)
+            }
+        }
+    }
+
+    object FutureExecutor {
+        type FutureCallback = () => Future[Any]
+        type ElementType = (String, FutureCallback)
+        type ListType = List[ElementType]
+
+        private def run_one(delayMs: Int,
+                            task: ElementType,
+                            pending: ListType): Future[Any] = {
+            println(s"Running task ${task._1}")
+            task._2().recover {
+                case NonFatal(err) =>
+                    println(s"Task ${task._1} failed: $err")
+                    System.exit(1)
+            }.flatMap { _ =>
+                delay(delayMs)
+            }.flatMap{ _ =>
+                    if (pending.nonEmpty) {
+                        run_one(delayMs, pending.head, pending.tail)
+                    } else Future.successful()
+            }
+        }
+
+        private def delay(delayMs: Int): Future[Any] =
+            Future{
+                Thread.sleep(delayMs)
+            }
+    }
+
     def mi_1415(): Unit = {
         val api = new VppApi("test")
 
@@ -97,44 +146,35 @@ object Main {
             }
         }
 
-        def op[T](name: String,
-                  future: Future[T]): T = {
-            try {
-                println(s"Begin $name")
-                val result = Await.result(future, 60 seconds)
-                println(s"End $name")
-                result
-            } catch {
-                case NonFatal(err) =>
-                    println(s"Failed $name: $err")
-                    throw err
-            }
-        }
+        val runner = new FutureExecutor(2000)
 
-        val fooId = op("> create host-interface foodp",
-                       createDevice("foodp", "5e:ab:a6:08:dd:d4"))
+        var fooId = -1
+        var outId = -1
 
-        val outId = op("> create host-interface outdp",
-                       createDevice("outdp", "82:b6:10:d0:09:71"))
+        runner
+            .add("> create host-interface foodp",
+                   createDevice("foodp", "5e:ab:a6:08:dd:d4").map(fooId = _))
+            .add("> create host-interface outdp",
+                   createDevice("outdp", "82:b6:10:d0:09:71").map(outId = _))
+            .add("> set int ip address foodp",
+                   api.addDelDeviceAddress(fooId,
+                                           Array[Byte](1, 1, 1, 2),
+                                           isIpv6 = false,
+                                           isAdd = true))
 
-        op("> set int ip address foodp",
-           api.addDelDeviceAddress(fooId,
-                                   Array[Byte](1, 1, 1, 2),
-                                   isIpv6 = false,
-                                   isAdd = true))
+            .add("> set int ip address outdp",
+                   api.addDelDeviceAddress(outId,
+                                           Array[Byte](2, 2, 2, 1),
+                                           isIpv6 = false,
+                                           isAdd = true))
 
-        op("> set int ip address outdp",
-           api.addDelDeviceAddress(outId,
-                                   Array[Byte](2, 2, 2, 1),
-                                   isIpv6 = false,
-                                   isAdd = true))
-
-        op("> ip route add",
-            api.addDelRoute(Array[Byte](3, 3, 3, 3),
-                            24,
-                            Array[Byte](2, 2, 2, 2),
-                            isAdd=true,
-                            isIpv6 = false))
+            .add("> ip route add",
+                api.addDelRoute(Array[Byte](3, 3, 3, 3),
+                                24,
+                                Array[Byte](2, 2, 2, 2),
+                                isAdd=true,
+                                isIpv6 = false))
+            .run()
     }
 
     def main_with_futures(args: Array[String]): Unit = {
