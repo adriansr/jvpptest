@@ -159,16 +159,17 @@ object Main {
         runner
             .add("> create host-interface name ip4rtrdp",
                  createDevice("ip4rtrdp", None).map(ip4rtrdpIndex = _))
-            .add("> ip route add (net ip4rtrdp)",
+            /*.add("> ip route add (net ip4rtrdp)",
                  api.addDelRoute(Array[Byte](10, 0, 0, 1),
                                  24,
                                  None,
                                  Some(ip4rtrdpIndex),
                                  isAdd = true,
-                                 isIpv6 = false))
+                                 isIpv6 = false))*/
             .add("> set int ip address ip4rtrdp",
                  api.addDelDeviceAddress(ip4rtrdpIndex,
                                          Array[Byte](10, 0, 0, 1),
+                                         24,
                                          isIpv6 = false,
                                          isAdd = true))
             .add("> ip route add",

@@ -61,13 +61,14 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
 
     def addDelDeviceAddress(ifIndex: Int,
                             address: Array[Byte],
+                            addressLength: Byte,
                             isIpv6: Boolean,
                             isAdd: Boolean,
                             deleteAll: Boolean = false)
                         : Future[SwInterfaceAddDelAddressReply] = {
         val msg = new SwInterfaceAddDelAddress
         msg.address = address
-        msg.addressLength = if (isIpv6) 16 else 4
+        msg.addressLength = addressLength
         msg.delAll = if (deleteAll) 1 else 0
         msg.isIpv6 = if (isIpv6) 1 else 0
         msg.swIfIndex = ifIndex
