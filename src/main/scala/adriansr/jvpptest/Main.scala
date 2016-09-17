@@ -84,7 +84,7 @@ object Main {
 
     def main(args: Array[String]): Unit = mi_1412()
 
-    class FutureExecutor(delayBetweenTasks: Int,
+    class FutureExecutor(delayBetweenTasks: Int = 0,
                          tasks: FutureExecutor.ListType = List()) {
 
         def add(name: String, op: => Future[Any]): FutureExecutor =
@@ -129,7 +129,7 @@ object Main {
 
         private def delay(delayMs: Int): Future[Any] =
             Future{
-                Thread.sleep(delayMs)
+                if (delayMs > 0) Thread.sleep(delayMs)
             }
     }
 
@@ -155,17 +155,11 @@ object Main {
         val runner = new FutureExecutor(500)
 
         var ip4rtrdpIndex = -1
+        var ip6rtrdpIndex = -1
 
         runner
             .add("> create host-interface name ip4rtrdp",
                  createDevice("ip4rtrdp", None).map(ip4rtrdpIndex = _))
-            /*.add("> ip route add (net ip4rtrdp)",
-                 api.addDelRoute(Array[Byte](10, 0, 0, 1),
-                                 24,
-                                 None,
-                                 Some(ip4rtrdpIndex),
-                                 isAdd = true,
-                                 isIpv6 = false))*/
             .add("> set int ip address ip4rtrdp",
                  api.addDelDeviceAddress(ip4rtrdpIndex,
                                          Array[Byte](10, 0, 0, 1),
@@ -176,9 +170,24 @@ object Main {
                  api.addDelRoute(Array[Byte](20, 0, 0, 0),
                                  26,
                                  Some(Array[Byte](10, 0, 0, 2)),
-                                 None,
+                                 Some(ip4rtrdpIndex),
                                  isAdd = true,
                                  isIpv6 = false))
+            .add("> create host-interface name ip6rtrdp",
+                 createDevice("ip6rtrdp", None).map(ip6rtrdpIndex = _))
+            .add("> set int ip address ip4rtrdp",
+                 api.addDelDeviceAddress(ip6rtrdpIndex,
+                                         Array[Byte](0x20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+                                         64,
+                                         isIpv6 = true,
+                                         isAdd = true))
+            .add("> ip route add",
+                 api.addDelRoute(Array[Byte](0xbb.toByte, 0xbb.toByte, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                                 48,
+                                 Some(Array[Byte](0x20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)),
+                                 Some(ip6rtrdpIndex),
+                                 isAdd = true,
+                                 isIpv6 = true))
             .run()
     }
 

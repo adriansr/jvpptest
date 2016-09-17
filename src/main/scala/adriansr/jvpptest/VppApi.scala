@@ -42,6 +42,7 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
                 request.hwAddr = addr
                 request.useRandomHwAddr = 0
             case None =>
+                request.hwAddr = Array[Byte](0, 0, 0, 0, 0, 0) // needed?
                 request.useRandomHwAddr = 1
         }
         vppRequestToFuture(lib.afPacketCreate(request))
@@ -54,11 +55,13 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         val setUpMsg = new SwInterfaceSetFlags
         setUpMsg.adminUpDown = if (isUp) 1 else 0
         setUpMsg.deleted = 0
-        setUpMsg.linkUpDown = 1
+        setUpMsg.linkUpDown = 0
         setUpMsg.swIfIndex = ifIndex
         vppRequestToFuture(lib.swInterfaceSetFlags(setUpMsg))
     }
 
+    // equivalent to:
+    // vpp# set int ip address <address>/<prefix> <interface>
     def addDelDeviceAddress(ifIndex: Int,
                             address: Array[Byte],
                             addressLength: Byte,
@@ -70,6 +73,7 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         msg.address = address
         msg.addressLength = addressLength
         msg.delAll = if (deleteAll) 1 else 0
+        msg.isAdd = if (isAdd) 1 else 0
         msg.isIpv6 = if (isIpv6) 1 else 0
         msg.swIfIndex = ifIndex
         vppRequestToFuture(lib.swInterfaceAddDelAddress(msg))
@@ -82,37 +86,25 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
                     nextHop: Option[Array[Byte]],
                     device: Option[Int],
                     isAdd: Boolean,
-                    isIpv6: Boolean): Future[IpAddDelRouteReply] = {
+                    isIpv6: Boolean,
+                    multiplath: Boolean = false): Future[IpAddDelRouteReply] = {
         val routeMsg = new IpAddDelRoute
         routeMsg.dstAddress = address
         routeMsg.dstAddressLength = prefix
         routeMsg.isAdd = if (isAdd) 1 else 0
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
         routeMsg.createVrfIfNeeded = 1
+        routeMsg.resolveIfNeeded = 1
+        routeMsg.resolveAttempts = 3
         routeMsg.nextHopWeight = 1
+        routeMsg.isMultipath = if (multiplath) 1 else 0
         if (nextHop.isDefined) routeMsg.nextHopAddress = nextHop.get
         if (device.isDefined) routeMsg.nextHopSwIfIndex = device.get
         vppRequestToFuture(lib.ipAddDelRoute(routeMsg))
     }
-
 }
 
 object VppApi {
-    /*trait RouteTarget {
-        def encode(msg: IpAddDelRoute): Unit
-    }
-
-    case class AddressTarget(address: Array[Byte]) extends RouteTarget {
-        def encode(msg: IpAddDelRoute): Unit = {
-            msg.nextHopAddress = address
-        }
-    }
-
-    case class NetworkTarget(ifaceIdx: Int) extends RouteTarget {
-        def encode(msg: IpAddDelRoute): Unit = {
-            msg.nextHopSwIfIndex = ifaceIdx
-        }
-    }*/
 
     private def toScalaFuture[T](cs: CompletionStage[T])
                                 (implicit ec: ExecutionContext): Future[T] = {
