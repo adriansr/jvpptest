@@ -162,9 +162,10 @@ object Main {
             .add("> create host-interface name ip4rtrdp",
                  createDevice("ip4rtrdp", None).map(ip4rtrdpIndex = _))
             .add("> ip route add (net ip4rtrdp)",
-                 api.addDelRoute(Array[Byte](10, 0, 0, 0),
+                 api.addDelRoute(Array[Byte](10, 0, 0, 1),
                                  24,
-                                 VppApi.NetworkTarget(ip4rtrdpIndex),
+                                 None,
+                                 Some(ip4rtrdpIndex),
                                  isAdd = true,
                                  isIpv6 = false))
             .add("> set int ip address ip4rtrdp",
@@ -172,16 +173,17 @@ object Main {
                                          Array[Byte](10, 0, 0, 1),
                                          isIpv6 = false,
                                          isAdd = true))
-                .add("> ip route add",
-                     api.addDelRoute(Array[Byte](20, 0, 0, 0),
-                                     26,
-                                     VppApi.AddressTarget(Array[Byte](10, 0, 0, 2)),
-                                     isAdd = true,
-                                     isIpv6 = false))
+            .add("> ip route add",
+                 api.addDelRoute(Array[Byte](20, 0, 0, 0),
+                                 26,
+                                 Some(Array[Byte](10, 0, 0, 2)),
+                                 None,
+                                 isAdd = true,
+                                 isIpv6 = false))
             .run()
     }
 
-    def mi_1415(): Unit = {
+    /*def mi_1415(): Unit = {
         val api = new VppApi("test")
 
         // returns the created interface index
@@ -246,7 +248,7 @@ object Main {
                                 isAdd = true,
                                 isIpv6 = false))
             .run()
-    }
+    }*/
 
     def main_with_futures(args: Array[String]): Unit = {
 
