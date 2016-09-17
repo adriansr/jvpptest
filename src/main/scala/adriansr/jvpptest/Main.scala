@@ -16,8 +16,6 @@ import org.openvpp.jvpp.core.dto._
 import org.openvpp.jvpp.core.future.FutureJVppCoreFacade
 import org.openvpp.jvpp.{VppCallbackException, _}
 
-import adriansr.jvpptest.VppApi.NetworkTarget
-
 /**
   * Created by adrian on 06/09/16.
   */
