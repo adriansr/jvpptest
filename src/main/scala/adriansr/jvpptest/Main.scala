@@ -84,7 +84,7 @@ object Main {
         }
     }
 
-    def main(args: Array[String]): Unit = mi_1415()
+    def main(args: Array[String]): Unit = mi_1412()
 
     class FutureExecutor(delayBetweenTasks: Int,
                          tasks: FutureExecutor.ListType = List()) {
@@ -133,6 +133,52 @@ object Main {
             Future{
                 Thread.sleep(delayMs)
             }
+    }
+
+
+    def mi_1412(): Unit = {
+        val api = new VppApi("test")
+
+        // returns the created interface index
+        def createDevice(name: String, mac: Option[String]): Future[Int] = {
+            val macArray = if (mac.isDefined) {
+                Some(mac.get.split(":").map(Integer.parseInt(_, 16).toByte))
+            } else {
+                None
+            }
+
+            api.createDevice(name, macArray) flatMap {
+                result => api.setDeviceAdminState(result.swIfIndex,
+                                                  isUp = true) map
+                          (_ => result.swIfIndex)
+            }
+        }
+
+        val runner = new FutureExecutor(500)
+
+        var ip4rtrdpIndex = -1
+
+        runner
+            .add("> create host-interface name ip4rtrdp",
+                 createDevice("ip4rtrdp", None).map(ip4rtrdpIndex = _))
+            .add("> ip route add (net ip4rtrdp)",
+                 api.addDelRoute(Array[Byte](10, 0, 0, 0),
+                                 24,
+                                 VppApi.NetworkTarget(ip4rtrdpIndex),
+                                 isAdd = true,
+                                 isIpv6 = false))
+            .add("> set int ip address ip4rtrdp",
+                 api.addDelDeviceAddress(ip4rtrdpIndex,
+                                         Array[Byte](10, 0, 0, 1),
+                                         isIpv6 = false,
+                                         isAdd = true))
+                .add("> ip route add",
+                     api.addDelRoute(Array[Byte](20, 0, 0, 0),
+                                     26,
+                                     VppApi.AddressTarget(Array[Byte](10, 0, 0, 2)),
+                                     isAdd = true,
+                                     isIpv6 = false))
+            .run()
     }
 
     def mi_1415(): Unit = {
