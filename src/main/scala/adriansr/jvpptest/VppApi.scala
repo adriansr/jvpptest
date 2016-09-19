@@ -101,7 +101,7 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.createVrfIfNeeded = 0
         routeMsg.resolveIfNeeded = 0
         routeMsg.resolveAttempts = 0
-        routeMsg.nextHopWeight = 0
+        routeMsg.nextHopWeight = 1
         // this seems to be set automatically when you add more than
         // one route to the same destination
         routeMsg.isMultipath = if (multiplath) 1 else 0
