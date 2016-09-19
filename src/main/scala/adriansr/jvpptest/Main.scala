@@ -192,6 +192,9 @@ object Main {
                                  isAdd = true,
                                  isIpv6 = true))
             .run()
+        //vpp# set int ip address host-ip6rtrdp 2001::1/64
+        //vpp# ip route add bbbb::/48 via 2001::2 host-ip6rtrdp
+
     }
 
     /*def mi_1415(): Unit = {

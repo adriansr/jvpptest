@@ -98,10 +98,10 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
         // I have no idea if this ones are actually required
         // or not
-        routeMsg.createVrfIfNeeded = 1
-        routeMsg.resolveIfNeeded = 1
-        routeMsg.resolveAttempts = 3
-        routeMsg.nextHopWeight = 1
+        routeMsg.createVrfIfNeeded = 0
+        routeMsg.resolveIfNeeded = 0
+        routeMsg.resolveAttempts = 0
+        routeMsg.nextHopWeight = 0
         // this seems to be set automatically when you add more than
         // one route to the same destination
         routeMsg.isMultipath = if (multiplath) 1 else 0
