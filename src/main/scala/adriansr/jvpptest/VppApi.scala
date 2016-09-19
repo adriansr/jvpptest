@@ -55,6 +55,9 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         val setUpMsg = new SwInterfaceSetFlags
         setUpMsg.adminUpDown = if (isUp) 1 else 0
         setUpMsg.deleted = 0
+        // not 100% sure what linkUpDown=0 means, but it can be seen
+        // like this in example code, for example in:
+        // https://wiki.fd.io/view/VPP/How_To_Use_The_API_Trace_Tools
         setUpMsg.linkUpDown = 0
         setUpMsg.swIfIndex = ifIndex
         vppRequestToFuture(lib.swInterfaceSetFlags(setUpMsg))
@@ -93,10 +96,14 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.dstAddressLength = prefix
         routeMsg.isAdd = if (isAdd) 1 else 0
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
+        // I have no idea if this ones are actually required
+        // or not
         routeMsg.createVrfIfNeeded = 1
         routeMsg.resolveIfNeeded = 1
         routeMsg.resolveAttempts = 3
         routeMsg.nextHopWeight = 1
+        // this seems to be set automatically when you add more than
+        // one route to the same destination
         routeMsg.isMultipath = if (multiplath) 1 else 0
         if (nextHop.isDefined) routeMsg.nextHopAddress = nextHop.get
         if (device.isDefined) routeMsg.nextHopSwIfIndex = device.get

@@ -92,7 +92,7 @@ object Main {
 
         def run(): Unit = {
             val rlist = tasks.reverse
-            FutureExecutor.run_one(delayBetweenTasks,
+            FutureExecutor.runList(delayBetweenTasks,
                                    rlist.head,
                                    rlist.tail) onComplete {
                 case Success(_) =>
@@ -110,7 +110,7 @@ object Main {
         type ElementType = (String, FutureCallback)
         type ListType = List[ElementType]
 
-        private def run_one(delayMs: Int,
+        private def runList(delayMs: Int,
                             task: ElementType,
                             pending: ListType): Future[Any] = {
             println(s"Running task ${task._1}")
@@ -122,7 +122,7 @@ object Main {
                 delay(delayMs)
             }.flatMap{ _ =>
                     if (pending.nonEmpty) {
-                        run_one(delayMs, pending.head, pending.tail)
+                        runList(delayMs, pending.head, pending.tail)
                     } else {
                         val unit = ()
                         Future.successful(unit)
