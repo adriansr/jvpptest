@@ -96,15 +96,20 @@ class VppApi(connectionName: String)(implicit ec: ExecutionContext) {
         routeMsg.dstAddressLength = prefix
         routeMsg.isAdd = if (isAdd) 1 else 0
         routeMsg.isIpv6 = if (isIpv6) 1 else 0
-        // I have no idea if this ones are actually required
-        // or not
+
+        // createVrfIfNeeded / resolveIfNeeded / resolveAttempts:
+        // seem not needed, but don't hurt.
         routeMsg.createVrfIfNeeded = 1
         routeMsg.resolveIfNeeded = 1
-        routeMsg.resolveAttempts = 3
+        routeMsg.resolveAttempts = 3 // got from sample
+
+        // nextHopWeight is required to be at least 1
         routeMsg.nextHopWeight = 1
+
         // this seems to be set automatically when you add more than
-        // one route to the same destination
+        // one route to the same destination, not sure
         routeMsg.isMultipath = if (multiplath) 1 else 0
+
         if (nextHop.isDefined) routeMsg.nextHopAddress = nextHop.get
         if (device.isDefined) routeMsg.nextHopSwIfIndex = device.get
         vppRequestToFuture(lib.ipAddDelRoute(routeMsg))
