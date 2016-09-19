@@ -187,7 +187,7 @@ object Main {
             .add("> ip route add",
                  api.addDelRoute(Array[Byte](0xbb.toByte, 0xbb.toByte, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
                                  48,
-                                 Some(Array[Byte](0x20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)),
+                                 Some(Array[Byte](0x20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2)),
                                  Some(ip6rtrdpIndex),
                                  isAdd = true,
                                  isIpv6 = true))
