@@ -1,7 +1,7 @@
 apply plugin: 'scala'
 
 repositories{
-    maven { url "https://nexus.fd.io/content/repositories/fd.io.snapshot/" }
+    maven { url "https://nexus.fd.io/content/repositories/fd.io.release/" }
     //flatDir {
     //    dirs 'external'
     //}
@@ -12,10 +12,8 @@ mavenCentral()
 dependencies{
     compile 'org.slf4j:slf4j-api:1.7.5'
     compile "org.scala-lang:scala-library:2.11.7"
-    compile "io.fd.vpp:jvpp-core:16.09-SNAPSHOT"
-    compile "io.fd.vpp:jvpp-registry:16.09-SNAPSHOT"
-    //compile name: 'jvpp-core-16.09'
-    //compile name: 'jvpp-registry-16.09'
+    compile "io.fd.vpp:jvpp-core:16.09"
+    compile "io.fd.vpp:jvpp-registry:16.09"
     testCompile "junit:junit:4.11"
 }
 
