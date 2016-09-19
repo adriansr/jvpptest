@@ -123,7 +123,10 @@ object Main {
             }.flatMap{ _ =>
                     if (pending.nonEmpty) {
                         run_one(delayMs, pending.head, pending.tail)
-                    } else Future.successful()
+                    } else {
+                        val unit = ()
+                        Future.successful(unit)
+                    }
             }
         }
 
